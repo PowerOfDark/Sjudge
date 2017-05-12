@@ -15,7 +15,7 @@
 #define SS_EMULATING 3
 #define SS_CHANGED   4
 
-#define RETVAL_OK	        0
+#define RETVAL_OK            0
 #define RETVAL_TLE        125
 #define RETVAL_MLE        124
 #define RETVAL_SIG_BASE     0

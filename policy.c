@@ -1,5 +1,5 @@
-#include <sys/syscall.h>
-#include "esyscall.h"
+
+
 #define MAX_SYSNR 2048
 //
 //#include "supervisor.h"
@@ -130,6 +130,7 @@ short syscall_flags[MAX_SYSNR] =
                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                 0, 0, 0, 0, 0, 0, 0,
         };
+
 /*short syscall_flags[MAX_SYSNR] = {
         [__NR_restart_syscall] = SC_ALLOWED,
         [__NR_read]            = SC_ALLOWED|SC_NOEXTENSION,
@@ -183,15 +184,15 @@ short syscall_flags[MAX_SYSNR] =
 
 short syscall_flag(int id)
 {
-        short result; // eax@3
+    short result; // eax@3
 
-        if (id  >= 0 && id <= 2047 )
-        {
-                result = syscall_flags[id];
-        }
-        else
-        {
-                result = 0;
-        }
-        return result;
+    if (id >= 0 && id <= 2047)
+    {
+        result = syscall_flags[id];
+    }
+    else
+    {
+        result = 0;
+    }
+    return result;
 }
