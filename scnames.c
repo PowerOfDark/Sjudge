@@ -1,11 +1,22 @@
 #include <stdlib.h>
 #include <sys/syscall.h>
-//#include <seccomp.h>
-//#include <seccomp.h>
-#include "esyscall.h"
 
-//#include "supervisor.h"
+#ifndef _ESYSCALL_H
+#define _ESYSCALL_H
 
+#define __NRe_ioshmget     1027
+#define __NRe_ioshmat      1028
+#define __NRe_iochunk      1029
+#define __NRe_ioflush      1030
+#define __NRe_svtest       1031
+
+#define __NR_ioshmget      __NRe_ioshmget
+#define __NR_ioshmat       __NRe_ioshmat
+#define __NR_iochunk       __NRe_iochunk
+#define __NR_ioflush       __NRe_ioflush
+#define __NR_svtest        __NRe_svtest
+
+#endif
 #define MAX_SYSNR 2048
 static const char* syscall_names[MAX_SYSNR] = {
         [__NR_restart_syscall] = "restart_syscall",
@@ -297,7 +308,7 @@ static const char* syscall_names[MAX_SYSNR] = {
         [__NRe_svtest] = "e_svtest",
 };
 
-const char* syscall_name(int sysnr)
+const char* GetSyscallName(int sysnr)
 {
     if (sysnr < 0 || sysnr >= MAX_SYSNR || syscall_names[sysnr] == NULL)
         return "<unknown>";

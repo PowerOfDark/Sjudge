@@ -3,11 +3,12 @@
 
 #include <stdio.h>
 
-#define SC_ALLOWED        1
-#define SC_MEMORY         2 /* changes amount of used memory */
-#define SC_SKIP           4
-#define SC_EXTENSION      8 /* esyscalls */
-#define SC_NOEXTENSION   16 /* disable when estensions forced */
+#define SC_ALLOWED      0x1
+#define SC_MEMORY       0x2 /* changes amount of used memory */
+#define SC_SKIP         0x4
+#define SC_EXTENSION    0x8 /* esyscalls */
+#define SC_NOEXTENSION  0x10 /* disable when estensions forced */
+#define SC_TRAP         0x20
 
 #define SS_OUT       0
 #define SS_IN        1
@@ -39,7 +40,7 @@
 extern short syscall_flags[MAX_SYSNR];
 extern short syscall_flags_java[MAX_SYSNR];
 extern short syscall_flags_java_inited[MAX_SYSNR];
-extern const char* allowed_open_dirs[];
+extern const char* ALLOWED_OPEN_DIRECTORIES[];
 
 #define PADSIZE 56  // 64byte linesize : 64 - 8
 struct THREAD_DATA
@@ -47,5 +48,18 @@ struct THREAD_DATA
     UINT64 _count;
     UINT8 _pad[PADSIZE];
 };
+
+extern "C" short GetSyscallFlags(int id);
+extern "C" const char* GetSyscallName(int);
+
+#define _sys_kill 0x25
+#define _sys_tkill 0xEE
+#define _sys_tgkill 0x10E
+#define _sys_read 0x03
+#define _sys_write 0x04
+#define _sys_open 0x05
+#define _sys_readv 0x91
+#define _sys_writev 0x92
+
 
 #endif

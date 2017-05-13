@@ -68,6 +68,9 @@ TOOL_ROOTS = Sjudge
 
 TOOLS = $(TOOL_ROOTS:%=$(OBJDIR)%$(PINTOOL_SUFFIX))
 $(info $$LINK_OUT is [${LINK_OUT}])
+HEADERS = CacheSimulation.h Handlers.h InsCounter.h Sjudge.h supervisor.h
+CPPSRC = $(wildcard *.cpp)
+CSRC = $(wildcard *.c)
 
 ##############################################################
 #
@@ -84,6 +87,8 @@ MyPinTool.test: $(OBJDIR)cp-pin.exe
 
 $(OBJDIR)cp-pin.exe:
 	$(CXX) $(PIN_HOME)/source/tools/Tests/cp-pin.cpp $(APP_CXXFLAGS) -o $(OBJDIR)cp-pin.exe
+$(OBJDIR)%.h:
+    $(test)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
@@ -91,14 +96,13 @@ $(OBJDIR):
 $(OBJDIR)%.o : %.cpp
 	$(CXX) -c $(CXXFLAGS) -I./ $(PIN_CXXFLAGS) ${OUTOPT}$@ $<
 
-
 $(OBJDIR)%.o : %.c
 	$(CC) -c $(CXXFLAGS) -I./ $(PIN_CXXFLAGS) ${OUTOPT}$@ $<
 
 $(TOOLS): $(PIN_LIBNAMES)
 
-$(TOOLS): $(OBJDIR)inscount.o $(OBJDIR)cachesim.o $(OBJDIR)scnames.o $(OBJDIR)policy.o $(TOOLS:%.so=%.o)
-	${PIN_LD} $(PIN_LDFLAGS) -Wl,--no-undefined $(LINK_DEBUG) ${LINK_OUT}$@ $^ ${PIN_LPATHS} $(PIN_LIBS) $(DBG)
+$(TOOLS): $(CPPSRC:%.cpp=$(OBJDIR)%.o) $(CSRC:%.c=$(OBJDIR)%.o) $(HEADERS)
+	${PIN_LD} $(PIN_LDFLAGS) -Wl,--no-undefined $(LINK_DEBUG) ${LINK_OUT}$@ $(CPPSRC:%.cpp=$(OBJDIR)%.o) $(CSRC:%.c=$(OBJDIR)%.o) ${PIN_LPATHS} $(PIN_LIBS) $(DBG)
 
 
 ## cleaning

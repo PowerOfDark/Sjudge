@@ -1,8 +1,7 @@
 
 
 #define MAX_SYSNR 2048
-//
-//#include "supervisor.h"
+
 #ifndef SC_ALLOWED
 #define SC_ALLOWED        1
 #define SC_MEMORY         2 /* changes amount of used memory */
@@ -182,7 +181,7 @@ short syscall_flags[MAX_SYSNR] =
         [__NRe_iochunk]        = SC_EXTENSION,
 };*/
 
-short syscall_flag(int id)
+short GetSyscallFlags(int id)
 {
     short result; // eax@3
 
