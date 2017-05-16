@@ -126,8 +126,8 @@ inline void CheckMemoryLimits()
 
 VOID OnSycallEntry(THREADID threadIndex, CONTEXT* ctxt, SYSCALL_STANDARD std, VOID* useless)
 {
-    UINT32 syscallNum; // ebx@1
-    const char* syscallName; // eax@9
+    UINT32 syscallNum;
+    const char* syscallName;
 
     syscallNum = PIN_GetSyscallNumber(ctxt, std);
 
@@ -240,10 +240,10 @@ const char* GetReturnValueString(int ret)
 void ReportResult(int code, const char* msg)
 {
     UINT64 totalInsCount = 0;
-    UINT64 totalCacheMissCount = 0; // kr10_8@6
-    UINT64 totalMemoryTime; // rax@7
-    UINT64 totalTime; // esi@7
-    UINT64 totalCpuTime; // [sp+3Ch] [bp-20h]@4
+    UINT64 totalCacheMissCount = 0;
+    UINT64 totalMemoryTime;
+    UINT64 totalTime;
+    UINT64 totalCpuTime;
 
 
     for (int i = 0; i < InsCounter::ThreadCount; i++)
@@ -267,15 +267,14 @@ void ReportResult(int code, const char* msg)
     }
     else
     {
-        if (totalTime >= TimeLimit)
+        if (totalTime >= (UINT64)TimeLimit)
         {
             code = RETVAL_TLE;
         }
     }
     fputc(10, stderr);
-    snprintf(
-            OutputBuffer,
-            1024,
+    fprintf(
+            stderr,
             "__RESULT__ %d %lld %u %lld %lld\n%s\n", //code time(total) time(real?) (mem usage) (syscall count) (result)
             code,
             (long long) totalTime,
@@ -283,7 +282,6 @@ void ReportResult(int code, const char* msg)
             MemoryUsagePeak,
             SyscallCount,
             msg);
-    write(OutputFd, &OutputBuffer, strlen((const char*) &OutputBuffer));
     if (!Silent)
     {
         fprintf(stderr, "SUPERVISOR REPORT\n");
@@ -305,7 +303,7 @@ void ReportResult(int code, const char* msg)
 BOOL Periodic(THREADID tid, INT32 sig, CONTEXT* ctxt, BOOL hasHandler, const EXCEPTION_INFO* pExceptInfo, VOID* v)
 {
 
-    UINT64 totalInsCount = 0; // rcx@2
+    UINT64 totalInsCount = 0;
     UINT64 totalCacheMissCount = 0;
     UINT64 totalCpuTime = 0;
     UINT64 totalMemoryTime = 0;
@@ -323,7 +321,7 @@ BOOL Periodic(THREADID tid, INT32 sig, CONTEXT* ctxt, BOOL hasHandler, const EXC
     totalMemoryTime = totalCacheMissCount / CPU_CYCLE_TIME;
 
     CheckMemoryLimits();
-    if ((totalCpuTime + totalMemoryTime) >= TimeLimit)
+    if ((totalCpuTime + totalMemoryTime) >= (UINT64)TimeLimit)
     {
         ReportResult(RETVAL_TLE, "time limit exceeded");
     }
@@ -340,7 +338,7 @@ BOOL Periodic(THREADID tid, INT32 sig, CONTEXT* ctxt, BOOL hasHandler, const EXC
 BOOL OnErrorSignal(THREADID tid, int sig, CONTEXT* ctxt, BOOL hasHandler, const EXCEPTION_INFO* pExceptInfo,
                    VOID* v)
 {
-    char buf[256]; // [sp+20h] [bp-10Ch]@1
+    char buf[256];
 
     snprintf(buf, 256, "process exited due to signal %d", sig);
     ReportResult(sig, buf);
@@ -349,6 +347,9 @@ BOOL OnErrorSignal(THREADID tid, int sig, CONTEXT* ctxt, BOOL hasHandler, const 
 
 VOID Fini(int code, VOID* v)
 {
+    FILE* f = fopen("out2", "w");
+    fprintf(f, "Fini()\n");
+    fclose(f);
     char buf[64];
     CheckMemoryLimits();
     if (code == 0)
@@ -384,12 +385,11 @@ VOID OnImageUnloaded(IMG img, VOID* v)
 
 int main(int argc, char* argv[])
 {
-
-    int result; // eax@13
+    int result;
 
     if (LEVEL_PINCLIENT::PIN_Init(argc, argv))
     {
-        result = 0;//Usage(v3);
+        result = 0;
     }
     else
     {
@@ -402,8 +402,8 @@ int main(int argc, char* argv[])
         }
         LEVEL_PINCLIENT::PIN_AddSyscallEntryFunction(OnSycallEntry, 0);
         LEVEL_PINCLIENT::PIN_AddSyscallExitFunction(OnSycallExit, 0);
-        LEVEL_PINCLIENT::PIN_InterceptSignal(14, Periodic, 0);
-        LEVEL_PINCLIENT::PIN_UnblockSignal(14, 1);
+        LEVEL_PINCLIENT::PIN_InterceptSignal(SIGALRM, Periodic, 0);
+        LEVEL_PINCLIENT::PIN_UnblockSignal(SIGALRM, 1);
         LEVEL_PINCLIENT::PIN_AddFiniFunction(Fini, 0);
         LEVEL_PINCLIENT::IMG_AddInstrumentFunction(OnImageLoaded, 0);
         LEVEL_PINCLIENT::IMG_AddUnloadFunction(OnImageUnloaded, 0);
@@ -415,8 +415,8 @@ int main(int argc, char* argv[])
 
         if (!Silent)
         {
-            fwrite("SJudge PinSupervisor version 0.99999\n", 1u, 0x25u, stderr);
-            fwrite("Copyright 2004-2011 (C) Szymon Acedanski\n\n", 1u, 0x2Au, stderr);
+            fprintf(stderr, "SJudge PinSupervisor version 0.99999\n");
+            fprintf(stderr, "Copyright 2004-2011 (C) Szymon Acedanski\n\n");
         }
         MemoryLimit = GetEnvironmentInteger("MEM_LIMIT", "MEM", 256000) & 0xFFFFFFFC;
         TimeLimit = GetEnvironmentInteger("TIME_LIMIT", "TIME", 10000);
@@ -438,13 +438,14 @@ int main(int argc, char* argv[])
             fprintf(stderr, "PIN  mem at start: %lld kB\n\n", PinBaseMemory);
         }
 
-        int signals[] = {1, 2, 3, 4, 6, 7, 0xB, 0xD, 0xF, 0xA, 0xC, 5, 0x18, 0x19, 0xFF};
+        int signals[] = {SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGBUS, SIGFPE, SIGUSR1, SIGSEGV, SIGUSR2,
+                         SIGPIPE, SIGTERM, SIGXCPU, SIGXFSZ, 0xFFFF};
         int i = 0;
         do
         {
             PIN_InterceptSignal(signals[i], OnErrorSignal, 0);
             PIN_UnblockSignal(signals[i], 1);
-        } while (signals[++i] != 0xFF);
+        } while (signals[++i] != 0xFFFF);
 
         rlimit lim;
         lim.rlim_cur = lim.rlim_max = 0;

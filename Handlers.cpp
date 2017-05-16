@@ -74,7 +74,7 @@ int Handlers::OnSysKillEntry(UINT32 pid, UINT32 sig)
         return 0;
     }
 
-    if (sig == SIGSTOP || sig == SIGTRAP || sig == SIGVTALRM)
+    if (sig == SIGSTOP || sig == SIGTRAP || sig == SIGVTALRM || sig == SIGKILL)
     {
         Forbidden("used Forbidden signal");
         return 0;
