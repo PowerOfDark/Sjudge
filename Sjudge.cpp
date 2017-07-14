@@ -56,7 +56,7 @@ void Fail(const char* msg)
 {
     char* reason; // eax@1
     reason = strerror(errno);
-    fprintf(stderr, "supervisor: %s (errno='%s')\n", msg, reason);
+    fprintf(stderr, "judge: %s (errno='%s')\n", msg, reason);
     exit(122);
 }
 
@@ -77,7 +77,7 @@ static char* GetEnvironmentString(const char* name, const char* name2, const cha
     return ret;
 }
 
-static long long GetEnvironmentInteger(const char* name, const char* name2, long dflt)
+static long long GetEnvironmentInteger(const char* name, const char* name2, long long dflt)
 {
     long long ret;
     char* t = getenv(name);
@@ -275,7 +275,7 @@ void ReportResult(int code, const char* msg)
     fputc(10, stderr);
     fprintf(
             stderr,
-            "__RESULT__ %d %lld %u %lld %lld\n%s\n", //code time(total) time(real?) (mem usage) (syscall count) (result)
+            "\n__RESULT__ %d %lld %u %lld %lld\n%s\n", //code time(total) time(real?) (mem usage) (syscall count) (result)
             code,
             (long long) totalTime,
             0,
@@ -347,9 +347,6 @@ BOOL OnErrorSignal(THREADID tid, int sig, CONTEXT* ctxt, BOOL hasHandler, const 
 
 VOID Fini(int code, VOID* v)
 {
-    FILE* f = fopen("out2", "w");
-    fprintf(f, "Fini()\n");
-    fclose(f);
     char buf[64];
     CheckMemoryLimits();
     if (code == 0)
@@ -394,8 +391,19 @@ int main(int argc, char* argv[])
     else
     {
         OutputFd = 2; //stderr
+        char* inputFileEnv = getenv("InputFile");
+        if(inputFileEnv)
+        {
+            freopen(inputFileEnv, "r", stdin);
+        }
+        char* outputFileEnv = getenv("OutputFile");
+        if(outputFileEnv)
+        {
+            freopen(outputFileEnv, "w", stdout);
+        }
+
         InsCounter::Start();
-        bool simulateCache = (bool) GetEnvironmentBool("CACHE", "CACHESIM", 0);
+        bool simulateCache = (bool) GetEnvironmentBool("CACHE", "SimulateCache", 0);
         if (simulateCache)
         {
             CacheSimulation::Start();
@@ -418,11 +426,11 @@ int main(int argc, char* argv[])
             fprintf(stderr, "SJudge PinSupervisor version 0.99999\n");
             fprintf(stderr, "Copyright 2004-2011 (C) Szymon Acedanski\n\n");
         }
-        MemoryLimit = GetEnvironmentInteger("MEM_LIMIT", "MEM", 256000) & 0xFFFFFFFC;
-        TimeLimit = GetEnvironmentInteger("TIME_LIMIT", "TIME", 10000);
-        HardTimeLimit = GetEnvironmentInteger("HARD_LIMIT", "HARD", (TimeLimit << 6) / 1000 + 24);
-        OutputLimit = GetEnvironmentInteger("OUT_LIMIT", 0, 50000000);
-        SyscallLimit = GetEnvironmentInteger("SC_LIMIT", 0, (long) (300000ULL * TimeLimit / 100ULL));
+        MemoryLimit = GetEnvironmentInteger("MEM_LIMIT", "MemoryLimitKb", 256000) & 0xFFFFFFFC;
+        TimeLimit = GetEnvironmentInteger("TIME_LIMIT", "TimeLimitMs", 10000);
+        HardTimeLimit = GetEnvironmentInteger("HARD_LIMIT", "HardTimeLimitMs", (TimeLimit << 6) / 1000 + 24);
+        OutputLimit = GetEnvironmentInteger("OUT_LIMIT", "OutputLimitBytes", 50000000);
+        SyscallLimit = GetEnvironmentInteger("SC_LIMIT", "SyscallLimit", (long) (300000ULL * TimeLimit / 100ULL));
         CountSystemTime = (bool) GetEnvironmentBool("SYSTIME", 0, 1);
         DisableSyscallFilter = (bool) GetEnvironmentBool("ALLOW", 0, 0);
         Started = time(0);
