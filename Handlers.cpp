@@ -43,6 +43,7 @@ int Handlers::OnSyscallEntry(unsigned int syscallNum, int a2, CONTEXT* ctxt, SYS
 
         }
         case _sys_write:
+		case _sys_writev:
         {
             UINT32 fd = getArg(0);
             UINT32 count = getArg(2);
@@ -55,6 +56,7 @@ int Handlers::OnSyscallEntry(unsigned int syscallNum, int a2, CONTEXT* ctxt, SYS
             return Handlers::OnSysOpenEntry(path, flags);
         }
         case _sys_read:
+		case _sys_readv:
             return 1;
         default:
         {
